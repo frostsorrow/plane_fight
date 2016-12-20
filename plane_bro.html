@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html 
+xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+  <title></title>
+  <link rel="stylesheet" href="jquery_ui/jquery-ui.min.css"/>
+  <link rel="stylesheet" href="formValidator/style/validator.css"/>
+  <style type="text/css">
+	*{margin:0;padding:0}
+	#container{
+		text-align:center;
+	}
+	#register table input{
+		width:150px;
+	}
+  </style>
+  <script src="jquery.min.js"></script>
+  <script src="jquery_ui/jquery-ui.min.js"></script>
+  <script src="formValidator/formValidator-4.0.1.min.js"></script>
+  <script src="formValidator/formValidatorRegex.js"></script>
+  <script src="jquery.form.min.js"></script>
+  <script src="js/GLOBAL.js"></script>
+ </head>
+ <body>
+	<div id="container"><canvas id="canvas" width="446" height="620"></canvas></div>
+	<div id="register" title="注册">
+		<form action="server/form.php" method="post" id="registerForm">
+			<table>
+				<tr>
+					<td>用户名称：</td>
+					<td><input id="uname" name="uname"/></td>
+					<td><div id="unameTip"></div></td>
+				</tr>
+				<tr>
+					<td>用户密码：</td>
+					<td><input id="pwd" name="pwd"/></td>
+					<td><div id="pwdTip"></div></td>
+				</tr>
+				<tr>
+					<td>确认密码：</td>
+					<td><input id="idenPwd"/></td>
+					<td><div id="idenPwdTip"></div></td>
+				</tr>
+				<tr>
+					<td>昵称：</td>
+					<td><input id="nickname" name="nickname"/></td>
+					<td><div id="nicknameTip"></div></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<div id="loginDialog" title="登录">
+		<form id="loginForm" method="post" action="server/login.php">
+			<table>
+				<tr>
+					<td>用户名：</td>
+					<td><input id="userName" name="userName"/></td>
+					<td><div id="userNameTip"></div></td>
+				</tr>
+				<tr>
+					<td>登录密码：</td>
+					<td><input id="userPwd" name="userPwd"/></td>
+					<td><div id="userPwdTip"></div></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<script>
+		$("#loginDialog").dialog({
+			autoOpen:false,
+			width:"500px",
+			modal:true,
+			buttons:{
+				"登录":function(){
+					$("#loginForm").ajaxSubmit({
+						beforeSubmit:function(){
+							return $.formValidator.pageIsValid("2");
+						},
+						success:function(responseText,responseStatus){
+								console.log(responseText);
+							if(responseText=="用户名与密码不匹配"){
+								$("#userNameTip").html("用户名与密码不匹配");
+								return false;
+							}else{
+								var jsonUser=JSON.parse(responseText);
+								UID=jsonUser.id;
+								UNICKNAME=jsonUser.nickname;
+								$("#loginForm").html("<h3>登录成功</h3>");
+								setTimeout(function(){
+									$("#loginDialog").dialog("close");
+								},2000)
+								console.log(UID+"_"+UNICKNAME);
+							}
+						}
+					})
+				},
+				"注册":function(){
+					$("#register").dialog("open");
+					$("#loginDialog").dialog("close");
+				}
+			}
+		});
+		$.formValidator.initConfig({
+			validatorGroup:"2"
+		});
+		$("#userName").formValidator({
+			validatorGroup:"2",
+			onShow:"长度为4-10位",
+			onEmpty:"用户名不能为空",
+			onCorrect:"正确",
+			onFocus:"请输入4-10位"
+		}).inputValidator({
+			min:4,
+			max:10,
+			onError:"长度为4-10位"
+		})
+		$("#userPwd").formValidator({
+			validatorGroup:"2",
+			onShow:"请输入密码6-10位",
+			onFocus:"请输入密码6-10位",
+			onEmpty:"密码不能为空",
+			onCorrect:""
+		}).inputValidator({
+			min:6,
+			max:10,
+			onError:"长度为6-10位"
+		})
+		$("#register").dialog({
+			buttons:{
+				"注册":function(){
+					$("#registerForm").ajaxSubmit({
+						beforeSubmit:function(formData,jqForm,options){
+							return $.formValidator.pageIsValid("1")
+						},
+						success:function(responseText,statusText){
+							if(responseText=="注册失败"){
+								$("#registerForm").html("<h3>注册失败</h3>");
+							}else{
+								var jsonUser=JSON.parse(responseText);
+								UID=jsonUser.uid;
+								UNICKNAME=jsonUser.nickname;
+								$("#registerForm").html("<h3>注册成功</h3>");
+								setTimeout(function(){
+									$("#register").dialog("close")
+								},3000)
+							}
+						}
+					})
+				},
+				"登录":function(){
+					$("#register").dialog("close");
+					$("#loginDialog").dialog("open");
+				}
+			},
+			minWidth:500,
+			modal:true
+		});
+		$("#ui-id-2").next().css("display","none")
+		$("#ui-id-1").next().css("display","none")
+		$.formValidator.initConfig({
+			validatorGroup:"1"
+		});
+		$("#uname").formValidator({
+			validatorGroup:"1",
+			onShow:"长度为4-10位",
+			onEmpty:"用户名不能为空",
+			onCorrect:"恭喜您，用户名称可用",
+			onFocus:""
+		}).inputValidator({
+			min:4,
+			max:10,
+			onError:"长度为4-10位"
+		}).ajaxValidator({
+			dataType:"html",
+			url:"server/server.php",
+			type:"post",
+			//data:{"state":1},
+			success:function(data){
+				if(data=="此用户名可以注册！"){
+					return true;
+				}
+				return false;
+			},
+			//button:$("input:contains('注册')"),
+			error:function(){
+				console.log("错")
+			},
+			onError:"用户名称已存在",
+			onWait:"正在对用户名进行合法性校验..."
+		})
+		$("#pwd").formValidator({
+			validatorGroup:"1",
+			onShow:"请输入密码6-10位",
+			onFocus:"请输入密码6-10位",
+			onEmpty:"密码不能为空",
+			onCorrect:"恭喜您，密码输入正确"
+		}).inputValidator({
+			min:6,
+			max:10,
+			onError:"长度为6-10位"
+		})
+		$("#idenPwd").formValidator({
+			validatorGroup:"1",
+			onShow:"请输入确认密码",
+			onFocus:"",
+			onCorrect:"恭喜您输入正确",
+			onEmpty:"不能为空"
+		}).inputValidator({
+			min:1,
+			onError:"不能为空"
+		}).compareValidator({
+			desID:"pwd",
+			operateor:"=",
+			onError:"两次密码不一致，请确认"
+		})
+		$("#nickname").formValidator({
+			validatorGroup:"1",
+			onShow:"昵称为1-12位",
+			onFocus:"请输入1-12位昵称",
+			onCorrect:"恭喜您输入正确"
+		}).inputValidator({
+			min:1,
+			max:12,
+			onError:"昵称为1-12位"
+		}).ajaxValidator({
+			dataType:"html",
+			url:"server/nickname.php",
+			type:"post",
+			success:function(data){
+				if(data=="此昵称可以注册！"){
+					return true;
+				}
+				return false;
+			},
+			//button:$("input:contains('注册')"),
+			error:function(){
+				console.log("错")
+			},
+			onError:"昵称已存在",
+			onWait:"正在对用户昵称进行合法性校验..."
+		})
+		
+
+
+		//canvas的宽和高
+		var WIDTH=446;
+		var HEIGHT=620;
+		var canvas=document.getElementById("canvas");
+		var ctx=canvas.getContext("2d");
+		//状态
+		//start  starting  running  pause  gameover
+		//点击开始页面start-->starting 
+		//在running状态时,鼠标移出running-->pause，鼠标移入pause-->running
+		//life-->0，gameover
+		var START=0;
+		var STARTING=1;
+		var RUNNING=2;
+		var PAUSE=3;
+		var GAME_OVER=4;
+		var state=START;
+		
+		//start文字
+		function gameBegin(){
+			var gameBegin=new Image();
+			gameBegin.src="img/game_begin.png";
+			var x=(WIDTH-gameBegin.width)/2;
+			var y=(HEIGHT-gameBegin.height)/2;
+			ctx.drawImage(gameBegin,x,y)
+		}
+		//starting-->running
+		canvas.onclick=function(){
+			if(state==START){
+				state=STARTING;
+			}
+		}
+
+		//背景：每一个状态都会用到
+		//属性
+		var bg=new Image();
+		bg.src="img/plane_bg.jpg";
+		var SKY={width:WIDTH,height:HEIGHT,img:bg,speed:50};
+		
+		//功能
+		var Sky=function(config){
+			this.width=config.width;
+			this.height=config.height;
+			this.speed=config.speed;
+			this.x1=0;
+			this.y1=0;
+			this.x2=0;
+			this.y2=-HEIGHT;
+			this.lastTime=0;
+			this.step=function(){
+				var currentTime=new Date().getTime();
+				if((currentTime-this.lastTime)>this.speed){
+					this.y1++;
+					this.y2++;
+					if(this.y1>this.height){
+						this.y1=-this.height;
+					}
+					if(this.y2>this.height){
+						this.y2=-this.height;
+					}
+					this.lastTime=new Date().getTime();
+				}
+			}
+			this.paint=function(){
+				ctx.drawImage(config.img,this.x1,this.y1);
+				ctx.drawImage(config.img,this.x2,this.y2);
+			}
+		}
+		var sky=new Sky(SKY);
+		sky.paint();
+		
+		//STARTING
+		var l=[];
+		l[0]=new Image();
+		l[0].src="img/starting1.png";
+		l[1]=new Image();
+		l[1].src="img/starting2.png";
+		l[2]=new Image();
+		l[2].src="img/starting3.png";
+		l[3]=new Image();
+		l[3].src="img/starting3.png";
+
+		var LOADING={img:l,speed:1000,height:l[0].height,width:l[0].width}
+
+		var Loading=function(config){
+			this.speed=config.speed;
+			this.img=config.img;
+			this.index=0;
+			this.x=0;
+			this.y=HEIGHT-config.height;
+			this.pic=this.img[this.index];
+			this.lastTime=0;
+			this.step=function(){
+				var currentTime=new Date().getTime();
+				if((currentTime-this.lastTime)>this.speed){
+					this.pic=this.img[this.index];
+						this.index++;
+					if(this.index>=4){
+						state=RUNNING;
+					}
+					this.lastTime=new Date().getTime();
+				}
+			}
+			this.paint=function(){
+				ctx.drawImage(this.pic,this.x,this.y);
+			}
+		}
+		var loading=new Loading(LOADING);
+
+		//running
+		//plane飞机hero
+		var h=[];
+		h[0]=new Image();
+		h[0].src="img/hero1.png";
+		h[1]=new Image();
+		h[1].src="img/hero2.png";
+		h[2]=new Image();
+		h[2].src="img/plane/enermy1_down1.png";
+		h[3]=new Image();
+		h[3].src="img/plane/enermy1_down2.png";
+		h[4]=new Image();
+		h[4].src="img/plane/enermy1_down3.png";
+		h[5]=new Image();
+		h[5].src="img/plane/enermy1_down4.png";
+		var PLANE={img:h,width:h[0].width,height:h[0].height,speed:100,createBulletInterval:500,bombInterval:500}
+		var PLANELIFE=3
+		//全局变量
+		var HEROX=WIDTH/2;
+		var HEROY=HEIGHT;
+		canvas.onmousemove=function(e){
+			if(state==RUNNING){
+				HEROX=e.offsetX;
+				HEROY=e.offsetY;
+			}
+		}
+		var Plane=function(config){
+			this.down=false;
+			this.canDelete=false;
+			this.life=config.life;
+			this.width=config.width;
+			this.height=config.height;
+			this.speed=config.speed;
+			this.img=config.img;
+			this.pic=null;
+			this.index=0;
+			this.bombIndex=1;
+			this.bombInterval=config.bombInterval;
+			this.x=null;
+			this.y=null;
+			this.canDelete=false;
+			this.duang=false;
+			this.lastTime=0;
+			this.step=function(){
+				this.x=HEROX-this.width/2;
+				this.y=HEROY-this.height/2;
+				if(this.x<0){
+					this.x=0;
+				}
+				if(this.x>WIDTH-this.width){
+					this.x=WIDTH-this.width;
+				}
+				if(this.y<0){
+					this.y=0;
+				}
+				if(this.y>HEIGHT-this.height){
+					this.y=HEIGHT-this.height;
+				}
+			}
+			this.paint=function(){
+				if(!this.down){
+					this.index++;
+					this.pic=this.img[this.index%2];
+				}else{
+					if(this.bombIndex<5){
+						var currentTime=new Date().getTime();
+						if(currentTime-this.lastTime>this.bombInterval){
+							this.bombIndex++;
+							this.lastTime=currentTime;
+						}
+					}else{
+						//this.bombIndex=4;
+						this.canDelete=true;
+					}
+					this.pic=this.img[this.bombIndex];
+				}
+				ctx.drawImage(this.pic,this.x,this.y) 
+			};
+			this.shoot=function(){
+				//创建子弹
+				var currentTime=new Date().getTime();
+				if((currentTime-this.lastTime)>config.createBulletInterval){
+					var bullet=new Bullet(BULLET,this.x,this.y);
+					bullets.push(bullet);
+					this.lastTime=new Date().getTime();
+				}
+			}
+		}
+		var plane=new Plane(PLANE);
+		
+		//子弹
+		var bulletImg=new Image();
+		bulletImg.src="img/bullet.png"
+
+		var bullets=[];
+
+		var BULLET={img:bulletImg,width:bulletImg.width,height:bulletImg.height}
+		//功能
+		var Bullet=function(config,x,y){
+			this.canDelete=false;
+			this.img=config.img;
+			this.width=config.width;
+			this.height=config.height;
+			this.x=x+plane.width/2-this.width/2;
+			this.y=y-this.height;
+			this.move=function(){
+				this.y-=2;
+			}
+			this.paint=function(){
+				ctx.drawImage(this.img,this.x,this.y)
+			}
+			this.outofbounderies=function(){
+				if(this.y<0-this.height){
+					return true;
+				}else{
+					return false;
+				}
+			}
+		}
+
+		//敌机：小、中、大
+		var s=[];
+		s[0]=new Image();
+		s[0].src="img/plane/enermy1.png";
+		s[1]=new Image();
+		s[1].src="img/plane/enermy1_down1.png";
+		s[2]=new Image();
+		s[2].src="img/plane/enermy1_down2.png";
+		s[3]=new Image();
+		s[3].src="img/plane/enermy1_down3.png";
+		s[4]=new Image();
+		s[4].src="img/plane/enermy1_down4.png";
+		var S_ENEMY={width:s[0].width,height:s[0].height,img:s,type:1,life:1,score:1,finalIndex:4}
+
+		var m=[];
+		m[0]=new Image();
+		m[0].src="img/plane/enermy2.png";
+		m[1]=new Image();
+		m[1].src="img/plane/enermy2_down1.png";
+		m[2]=new Image();
+		m[2].src="img/plane/enermy2_down2.png";
+		m[3]=new Image();
+		m[3].src="img/plane/enermy2_down3.png";
+		m[4]=new Image();
+		m[4].src="img/plane/enermy2_down4.png";
+		var M_ENEMY={img:m,width:m[0].width,height:m[0].height,type:2,life:5,score:5,finalIndex:4}
+
+		var l=[];
+		l[0]=new Image();
+		l[0].src="img/plane/enermy3.png";
+		l[1]=new Image();
+		l[1].src="img/plane/enermy3_2.png";
+		l[2]=new Image();
+		l[2].src="img/plane/enermy3_down1.png";
+		l[3]=new Image();
+		l[3].src="img/plane/enermy3_down2.png";
+		l[4]=new Image();
+		l[4].src="img/plane/enermy3_down3.png";
+		l[5]=new Image();
+		l[5].src="img/plane/enermy3_down4.png";
+		l[6]=new Image();
+		l[6].src="img/plane/enermy3_down5.png";
+		l[7]=new Image();
+		l[7].src="img/plane/enermy3_down6.png";
+		var L_ENEMY={img:l,width:l[0].width,height:l[0].height,speed:20,type:3,life:10,score:10,finalIndex:7}
+		var enemies=[];
+		//如果1-7就造s，如果8-9造m，如果10造l
+		//如果页面中有l，就不造l
+		//创建敌机
+			var lastTime=0;
+			var creatEnemyInterval=1000;
+		function createEnemy(){
+			var currentTime=new Date().getTime();
+			if(currentTime-lastTime>creatEnemyInterval){
+				var num=parseInt(Math.random()*10);
+				if(num<6){
+					var enemy=new Enemy(S_ENEMY);
+					enemies.push(enemy)
+				}else if(num<9){
+					var enemy=new Enemy(M_ENEMY);
+					enemies.push(enemy)
+				}else if(num<10){
+					if(enemies.length==0||enemies[0].type!=3){
+						var enemy=new Enemy(L_ENEMY);
+						enemies.unshift(enemy)
+					}
+				}
+				lastTime=currentTime;
+			}
+		}
+
+		//速度随机1-4：y+=(1+Math.random()*3)
+		//x随机0-(WIDTH-this.width)：x=Math.random()*(WIDTH-this.width)
+		//如果是s或m，只用一副图片
+		//如果是l,切换图片
+		function Enemy(config){
+			this.finalIndex=config.finalIndex;
+			this.hitPlane=false;
+			this.duang=false;
+			this.canDelete=false;
+			this.down=false;
+			this.life=config.life;
+			this.score=config.score;
+			this.type=config.type;
+			this.width=config.width;
+			this.height=config.height;
+			this.x=Math.random()*(WIDTH-this.width);
+			this.y=-this.height;
+			this.img=config.img;
+			this.index=0;
+			this.bombIndex=0;
+			this.pic=null
+			this.moveSpeed=1+Math.random()*3;
+			this.paint=function(){
+				if(!this.down){
+					if(config.type<3){
+						this.pic=this.img[0];
+					}else{
+						this.index++;
+						this.pic=this.img[this.index%2];
+					}
+				}else{
+					if(this.bombIndex<this.finalIndex){
+						this.bombIndex++;
+						this.pic=this.img[this.bombIndex];
+					}else{
+						this.canDelete=true;
+					}
+				}
+				ctx.drawImage(this.pic,this.x,this.y)
+			}
+			this.move=function(){
+				if(!this.down){
+					this.y+=this.moveSpeed;
+				}
+			}
+			this.outofbounderies=function(){
+				if(this.y>HEIGHT){
+					return true;
+				}else{
+					return false;
+				}
+			}          
+			//判断是否相撞
+			// this.x-obj.width/2<obj.x+obj.width/2<this.x+this.width+obj.width/2
+			//this.y-obj.height/2<obj.y+obj.height/2<this.y+this.height+obj.height/2
+			this.hit=function(obj){
+				if((this.x-obj.width/2<obj.x+obj.width/2)&&(obj.x+obj.width/2<this.x+this.width+obj.width/2)&&(this.y-obj.height/2<obj.y+obj.height/2)&&(obj.y+obj.height/2<this.y+this.height+obj.height/2)){
+					return true;
+				}else{
+					return false;
+				}
+			}
+		}
+		//检查是否相撞
+		//敌机life--,当life为0即可以切换down
+		var checkHit=function(){
+			for(var i=0;i<enemies.length;i++){
+				//只撞一次就行了
+				if(enemies[i].down||enemies[i].canDelete){
+					continue;
+				}
+				//判断与子弹相撞
+				for(var j=0;j<bullets.length;j++){
+					if(enemies[i].hit(bullets[j])){
+					console.log("撞到子弹啦")
+						enemies[i].duang=true;
+						enemies[i].life--;
+						bullets[j].canDelete=true;
+						if(enemies[i].life==0){
+							enemies[i].down=true;
+						}
+					}
+				}
+				//判断与飞机相撞-----------------------------------------------------???
+				//敌机life--,当life为0即可以切换down
+				//飞机life--，当life为0，可以切换down
+				if(enemies[i].hitPlane||plane.down){
+					continue;
+				}
+				if(enemies[i].hit(plane)){
+					console.log("撞到飞机啦")
+					enemies[i].life--;
+					PLANELIFE--;
+					enemies[i].hitPlane=true;
+					if(enemies[i].life==0){
+						enemies[i].down=true;
+					}
+					if(PLANELIFE==0){
+						console.log("飞机没命啦")
+						plane.down=true;
+					}else{
+						plane.duang=true;
+					}
+					
+				}
+			}
+		}
+		//在飞机被撞且life不为0
+		var createPlane=function(){
+			if(plane.duang&&PLANELIFE>0){
+				//console.log("飞机生命："+PLANELIFE)
+				//console.log("创建新飞机")
+				plane=new Plane(PLANE);
+			}
+		}
+
+		//绘制组件
+		function drawComponent(){
+			for(var i=0;i<bullets.length;i++){
+				bullets[i].paint();
+			}
+			for (var n=0;n<enemies.length ;n++ ){
+				enemies[n].paint();
+			}
+		}
+		function moveComponent(){
+			for(var i=0;i<bullets.length;i++){
+				bullets[i].move();
+			}
+			for (var n=0;n<enemies.length ;n++ ){
+				enemies[n].move();
+			}
+		}
+		//删除组件
+		function deleteComponent(){
+			for(var i=0;i<bullets.length;i++){
+				if(bullets[i].outofbounderies()||bullets[i].canDelete){
+					bullets.splice(i,1);
+					//console.log(bullets.length)
+				}
+			}
+			for (var n=0;n<enemies.length ;n++ ){
+				if(enemies[n].outofbounderies()||enemies[n].canDelete){
+					if(enemies[n].canDelete){
+						SCORE+=enemies[n].score;
+					}
+					enemies.splice(n,1)
+					//console.log(enemies.length)
+				}
+			}
+			if(plane.canDelete){
+				state=GAME_OVER;
+			}
+			
+		}
+		//写上life，score
+		var SCORE=0;
+		function drawTxt(){
+			ctx.font="normal 16px "
+			ctx.fillText("Score:"+SCORE,30,30);
+			ctx.fillText("Life:"+PLANELIFE,WIDTH-100,30);
+			ctx.fillText(UNICKNAME,WIDTH/2,30);
+		}
+
+		//Pause状态
+		canvas.onmouseout=function(){
+			if(state==RUNNING){
+				state=PAUSE;
+			}
+		}
+		canvas.onmouseover=function(){
+			if(state==PAUSE){
+				state=RUNNING;
+			}
+		}
+
+		//GAME_OVER
+		function drawOver(){
+			ctx.font="bold 24px 微软雅黑";
+			var width=ctx.measureText("GAME_OVER").width;
+			ctx.fillText("GAME_OVER",WIDTH/2-width/2,300);
+			ctx.font="normal 16px 微软雅黑"
+			ctx.fillText("Score:"+SCORE,30,30);
+			ctx.fillText("Life:"+PLANELIFE,WIDTH-100,30);
+			ctx.fillText(UNICKNAME,WIDTH/2,30);
+		}
+		setInterval(function(){
+			switch(state){
+				case START:
+					sky.step();
+					sky.paint();
+					gameBegin();
+					break;
+				case STARTING:
+					sky.step();
+					sky.paint();
+					loading.step();
+					loading.paint();
+					break;
+				case RUNNING:
+					sky.step();
+					sky.paint();
+					if(!plane.down){
+						plane.step();
+					}
+					plane.paint();
+					plane.shoot();
+					createEnemy();
+					drawComponent();
+					moveComponent();
+					deleteComponent();
+					checkHit();
+					createPlane();
+					drawTxt();
+					break;
+				case PAUSE:
+					sky.step();
+					sky.paint();
+					plane.paint();
+					drawComponent();
+					drawTxt();
+					break;
+				case GAME_OVER:
+					sky.step();
+					sky.paint();
+					plane.paint();
+					drawComponent();
+					drawOver();
+					break;
+			}
+		},20);
+	</script>
+ </body>
+</html>
