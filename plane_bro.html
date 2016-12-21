@@ -23,8 +23,6 @@ xmlns="http://www.w3.org/1999/xhtml">
   <script src="js/GLOBAL.js"></script>
  </head>
  <body>
-	<div>第一个分支</div>
-	<div>第一个分支</div>
 	<div id="container"><canvas id="canvas" width="446" height="620"></canvas></div>
 	<div id="register" title="注册">
 		<form action="server/form.php" method="post" id="registerForm">
@@ -75,12 +73,14 @@ xmlns="http://www.w3.org/1999/xhtml">
 			modal:true,
 			buttons:{
 				"登录":function(){
+					if($("#loginForm").html()=="<h3>登录成功</h3>"){
+						return;
+					}
 					$("#loginForm").ajaxSubmit({
 						beforeSubmit:function(){
 							return $.formValidator.pageIsValid("2");
 						},
 						success:function(responseText,responseStatus){
-								console.log(responseText);
 							if(responseText=="用户名与密码不匹配"){
 								$("#userNameTip").html("用户名与密码不匹配");
 								return false;
@@ -92,7 +92,6 @@ xmlns="http://www.w3.org/1999/xhtml">
 								setTimeout(function(){
 									$("#loginDialog").dialog("close");
 								},2000)
-								console.log(UID+"_"+UNICKNAME);
 							}
 						}
 					})
@@ -131,6 +130,9 @@ xmlns="http://www.w3.org/1999/xhtml">
 		$("#register").dialog({
 			buttons:{
 				"注册":function(){
+					if($("#registerForm").html()=="<h3>注册成功</h3>"){
+						return;
+					}
 					$("#registerForm").ajaxSubmit({
 						beforeSubmit:function(formData,jqForm,options){
 							return $.formValidator.pageIsValid("1")
@@ -618,7 +620,6 @@ xmlns="http://www.w3.org/1999/xhtml">
 				//判断与子弹相撞
 				for(var j=0;j<bullets.length;j++){
 					if(enemies[i].hit(bullets[j])){
-					console.log("撞到子弹啦")
 						enemies[i].duang=true;
 						enemies[i].life--;
 						bullets[j].canDelete=true;
@@ -634,7 +635,6 @@ xmlns="http://www.w3.org/1999/xhtml">
 					continue;
 				}
 				if(enemies[i].hit(plane)){
-					console.log("撞到飞机啦")
 					enemies[i].life--;
 					PLANELIFE--;
 					enemies[i].hitPlane=true;
@@ -642,7 +642,6 @@ xmlns="http://www.w3.org/1999/xhtml">
 						enemies[i].down=true;
 					}
 					if(PLANELIFE==0){
-						console.log("飞机没命啦")
 						plane.down=true;
 					}else{
 						plane.duang=true;
@@ -730,9 +729,61 @@ xmlns="http://www.w3.org/1999/xhtml">
 			ctx.fillText("Life:"+PLANELIFE,WIDTH-100,30);
 			ctx.fillText(UNICKNAME,WIDTH/2,30);
 		}
+
+		//游戏结束后，将uid和score传给服务器
+		function saveScore(){
+			ISSAVE=true;
+			var obj={"uid":UID,"score":SCORE}
+			$.ajax({
+				type:"get",
+				url:"server/saveScore.php",
+				data:obj,
+				success:function(responseTxt){
+					if(responseTxt=="ok"){
+						ISSAVE=true;
+					}else{
+						ISSAVE=false;
+					}
+				},
+				dataType:"html",
+				async:false
+			})
+		}
+
+		//排行
+		function getRankData(){
+			RANKDATA=1;
+			$.get(
+				"server/rank.php",
+				function(data){
+					RANKDATA=data;
+				},
+				"json"
+			);
+		}
+		//解析数据，将排行，昵称，分数显示在页面上
+		function showRank(){
+			var y=150;
+			ctx.font="normal 20px 微软雅黑";
+			ctx.fillText("名次",90,y);
+			ctx.fillText("昵称",200,y);
+			ctx.fillText("分数",320,y);
+			console.log("hi")
+			for(var i=0;i<RANKDATA.length;i++){
+				y+=30;
+				ctx.fillText(i+1,100,y);
+				ctx.fillText(RANKDATA[i].nickname,210,y);
+				ctx.fillText(RANKDATA[i].score,330,y);
+			}
+		}
+
 		setInterval(function(){
 			switch(state){
 				case START:
+					//从结束页面调到游戏开始时，ISSAVE必须初始化为false
+					if(ISSAVE){
+						ISSAVE=false;
+					}
 					sky.step();
 					sky.paint();
 					gameBegin();
@@ -771,7 +822,15 @@ xmlns="http://www.w3.org/1999/xhtml">
 					sky.paint();
 					plane.paint();
 					drawComponent();
-					drawOver();
+					drawTxt();
+					//drawOver();
+					if(!ISSAVE){
+						saveScore();
+					}
+					if(!RANKDATA){
+						getRankData();
+					}
+						showRank();
 					break;
 			}
 		},20);
