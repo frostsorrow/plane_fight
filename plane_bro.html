@@ -15,11 +15,11 @@ xmlns="http://www.w3.org/1999/xhtml">
 		width:150px;
 	}
   </style>
-  <script src="jquery.min.js"></script>
+  <script src="js/jquery.min.js"></script>
   <script src="jquery_ui/jquery-ui.min.js"></script>
   <script src="formValidator/formValidator-4.0.1.min.js"></script>
   <script src="formValidator/formValidatorRegex.js"></script>
-  <script src="jquery.form.min.js"></script>
+  <script src="js/jquery.form.min.js"></script>
   <script src="js/GLOBAL.js"></script>
  </head>
  <body>
@@ -29,7 +29,7 @@ xmlns="http://www.w3.org/1999/xhtml">
 			<table>
 				<tr>
 					<td>用户名称：</td>
-					<td><input id="uname" name="uname"/></td>
+					<td><input id="uname" name="uname" placeholder="请输入用户名称"/></td>
 					<td><div id="unameTip"></div></td>
 				</tr>
 				<tr>
@@ -768,7 +768,6 @@ xmlns="http://www.w3.org/1999/xhtml">
 			ctx.fillText("名次",90,y);
 			ctx.fillText("昵称",200,y);
 			ctx.fillText("分数",320,y);
-			console.log("hi")
 			for(var i=0;i<RANKDATA.length;i++){
 				y+=30;
 				ctx.fillText(i+1,100,y);
